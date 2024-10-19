@@ -10,6 +10,7 @@ import (
 	"google.golang.org/api/youtube/v3"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -30,17 +31,17 @@ type YoutubeRequest struct {
 }
 
 func (h *DbHandler) FetchYoutube(c echo.Context) error {
-	// Verify connection
-	err := h.DB.Ping()
-	if err != nil {
-		fmt.Println("error db from youtube page")
-		log.Fatal(err)
-	}
-	fmt.Println("Successfully connected to the database!")
 	req := new(YoutubeRequest)
-	err = c.Bind(req)
+	err := c.Bind(req)
 	if err != nil {
 		return c.JSON(400, map[string]string{"error": "Invalid request body"})
+	}
+	matchString, err := utils.ReverseSearchDB((*utils.DbHandler)(h), req.Keyword, h.Env["GEMINI_API_KEY"])
+	if err != nil || strings.TrimSpace(matchString) == "NO" {
+		//fmt.Println("No match found :", err.Error())
+	} else {
+		req.Modify = false
+		req.Keyword = strings.TrimSpace(matchString)
 	}
 	if req.Modify {
 		req.Keyword, err = utils.PrettyPrompt(req.Keyword, h.Env["GEMINI_API_KEY"])
@@ -48,8 +49,8 @@ func (h *DbHandler) FetchYoutube(c echo.Context) error {
 			fmt.Println("Unable to modify prompt, continuing with the original:", err.Error())
 		}
 	}
-	originalKeyword := req.Keyword
-	videoData, err := RunSearchQuery(h, req, originalKeyword)
+	fmt.Println("the keyword was : ", req.Keyword)
+	videoData, err := RunSearchQuery(h, req, req.Keyword)
 	if err != nil {
 		return c.JSON(500, map[string]string{"error": err.Error()})
 	}

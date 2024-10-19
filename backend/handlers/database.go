@@ -25,12 +25,12 @@ func (h *DbHandler) FetchDatabase(c echo.Context) error {
 
 	// Optionally modify the keyword if Modify is set to true
 
-	req.Keyword, err = utils.ReverseSearchDB((*utils.DbHandler)(h), req.Keyword, h.Env["GEMINI_API_KEY"])
-	if err != nil || req.Keyword == "NO" {
+	matchString, err := utils.ReverseSearchDB((*utils.DbHandler)(h), req.Keyword, h.Env["GEMINI_API_KEY"])
+	if err != nil || strings.TrimSpace(matchString) == "NO" {
 		fmt.Println("No match found :", err.Error())
 		return c.JSON(500, map[string]string{"error": "No videos with the given keyword in the database . Search again with YouTube option."})
 	}
-	req.Keyword = strings.TrimSpace(req.Keyword)
+	req.Keyword = strings.TrimSpace(matchString)
 	fmt.Println("keyword was : -->", req.Keyword)
 
 	//Fetch data from the database based on the keyword, limit (MaxResults), and offset
