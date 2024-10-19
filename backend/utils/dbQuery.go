@@ -19,10 +19,11 @@ type ClientResponse struct {
 	PublishedAt  string `json:"publishedAt"`
 }
 type DbHandler struct {
-	Mu       sync.Mutex
-	Keywords map[string]int
-	DB       *sql.DB
-	Env      map[string]string
+	Mu         sync.Mutex
+	Keywords   map[string]int
+	DB         *sql.DB
+	Env        map[string]string
+	CurrentKey int
 }
 
 // InsertYoutubeResponse Function to insert the YouTube response into the database

@@ -10,16 +10,18 @@ import (
 	"google.golang.org/api/youtube/v3"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
 )
 
 type DbHandler struct {
-	Mu       sync.Mutex
-	Keywords map[string]int
-	DB       *sql.DB
-	Env      map[string]string
+	Mu         sync.Mutex
+	Keywords   map[string]int
+	DB         *sql.DB
+	Env        map[string]string
+	CurrentKey int
 }
 
 type YoutubeRequest struct {
@@ -31,6 +33,7 @@ type YoutubeRequest struct {
 }
 
 func (h *DbHandler) FetchYoutube(c echo.Context) error {
+	roundRobin(h)
 	req := new(YoutubeRequest)
 	err := c.Bind(req)
 	if err != nil {
@@ -71,49 +74,36 @@ func RunSearchQuery(h *DbHandler, req *YoutubeRequest, originalKeyword string) (
 	var videoData []utils.ClientResponse
 	var paramsInResponse = []string{"snippet", "id"}
 
-	totalResultsFetched := int64(0)
-	for totalResultsFetched <= req.MaxResults {
-		fmt.Println("starting")
-		// Determine how many results to fetch in this iteration
-		totalResultsFetched = totalResultsFetched + 10
+	// API call to YouTube
+	call := service.Search.List(paramsInResponse).
+		Q(req.Keyword).
+		MaxResults(req.MaxResults).
+		Type("video").
+		Order("date").
+		PageToken(req.NextPageToken).
+		PublishedAfter(startDate(req.StartFrom))
 
-		// API call to YouTube
-		call := service.Search.List(paramsInResponse).
-			Q(req.Keyword).
-			MaxResults(10).
-			Type("video").
-			Order("date").
-			PageToken(req.NextPageToken).
-			PublishedAfter(startDate(req.StartFrom))
-
-		response, err := call.Do()
-		if err != nil {
-			log.Printf("Error fetching YouTube response: %v", err)
-			return nil, err
-		}
-
-		// Iterate through each item
-		for _, item := range response.Items {
-			video := utils.ClientResponse{
-				Keyword:      originalKeyword,
-				VideoID:      item.Id.VideoId,
-				Title:        item.Snippet.Title,
-				Description:  item.Snippet.Description,
-				ThumbnailUrl: item.Snippet.Thumbnails.Default.Url,
-				VideoUrl:     "https://www.youtube.com/watch?v=" + item.Id.VideoId,
-				PublishedAt:  PostgresDates(item.Snippet.PublishedAt),
-			}
-			videoData = append(videoData, video)
-		}
-
-		totalResultsFetched += int64(len(response.Items))
-		req.NextPageToken = response.NextPageToken
-
-		// Break if there are no more pages to fetch
-		if req.NextPageToken == "" {
-			break
-		}
+	response, err := call.Do()
+	if err != nil {
+		log.Printf("Error fetching YouTube response: %v", err)
+		return nil, err
 	}
+
+	// Iterate through each item
+	for _, item := range response.Items {
+		video := utils.ClientResponse{
+			Keyword:      originalKeyword,
+			VideoID:      item.Id.VideoId,
+			Title:        item.Snippet.Title,
+			Description:  item.Snippet.Description,
+			ThumbnailUrl: item.Snippet.Thumbnails.Default.Url,
+			VideoUrl:     "https://www.youtube.com/watch?v=" + item.Id.VideoId,
+			PublishedAt:  PostgresDates(item.Snippet.PublishedAt),
+		}
+		videoData = append(videoData, video)
+	}
+
+	req.NextPageToken = response.NextPageToken
 
 	// Insert data into the database
 	err = utils.InsertYoutubeResponse((*utils.DbHandler)(h), videoData)
@@ -141,4 +131,11 @@ func startDate(x int) string {
 	newTime := pastTime.Format("2006-01-02") + "T00:00:00Z"
 	fmt.Println("new time : ", newTime)
 	return newTime
+}
+func roundRobin(h *DbHandler) {
+	if h.CurrentKey != 5 {
+		h.Env["YOUTUBE_DEVELOPER_KEY"] = os.Getenv(fmt.Sprintf("YOUTUBE_DEVELOPER_KEY_%d", h.CurrentKey))
+	} else {
+		h.Env["YOUTUBE_DEVELOPER_KEY"] = os.Getenv(fmt.Sprintf("YOUTUBE_DEVELOPER_KEY_%d", 1))
+	}
 }

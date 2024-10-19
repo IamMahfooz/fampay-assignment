@@ -19,7 +19,7 @@ func main() {
 	envFile["DBPORT"] = os.Getenv("DBPORT")
 	envFile["DBNAME"] = os.Getenv("DBNAME")
 	envFile["USER"] = os.Getenv("USER")
-	envFile["YOUTUBE_DEVELOPER_KEY"] = os.Getenv("YOUTUBE_DEVELOPER_KEY")
+	envFile["YOUTUBE_DEVELOPER_KEY"] = os.Getenv("YOUTUBE_DEVELOPER_KEY_1")
 	envFile["GEMINI_API_KEY"] = os.Getenv("GEMINI_API_KEY")
 	envFile["PASSWORD"] = os.Getenv("PASSWORD")
 
@@ -35,9 +35,10 @@ func main() {
 	}(db)
 
 	h := &handlers.DbHandler{
-		Keywords: routes.UniqueKeywords(db),
-		DB:       db,
-		Env:      envFile,
+		Keywords:   routes.UniqueKeywords(db),
+		DB:         db,
+		Env:        envFile,
+		CurrentKey: 1,
 	}
 
 	routes.AssignHandlers(e, h)
