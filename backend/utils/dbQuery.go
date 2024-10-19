@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -19,13 +20,14 @@ type ClientResponse struct {
 	PublishedAt  string `json:"publishedAt"`
 }
 type DbHandler struct {
-	Keywords []string
+	Mu       sync.Mutex
+	Keywords map[string]int
 	DB       *sql.DB
 	Env      map[string]string
 }
 
 // InsertYoutubeResponse Function to insert the YouTube response into the database
-func InsertYoutubeResponse(h *DbHandler, keyword string, items []ClientResponse) error {
+func InsertYoutubeResponse(h *DbHandler, items []ClientResponse) error {
 	query := `
 		INSERT INTO youtube_responses (keyword, video_id, title, description, thumbnail_url, video_url, published_at)
 		VALUES `
