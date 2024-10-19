@@ -37,20 +37,20 @@ function Database() {
         fetchVideos();
     }, [keyword, modifyKeyword, maxResults, startDate]); // Added startDate as a dependency
 
-    useEffect(() => {
-        if (loading) {
-            const interval = setInterval(() => {
-                setProgress((prevProgress) => {
-                    if (prevProgress >= 100) {
-                        clearInterval(interval);
-                        return 100;
-                    }
-                    return prevProgress + 1.67;
-                });
-            }, 1000);
-            return () => clearInterval(interval);
-        }
-    }, [loading]);
+    // useEffect(() => {
+    //     if (loading) {
+    //         const interval = setInterval(() => {
+    //             setProgress((prevProgress) => {
+    //                 if (prevProgress >= 100) {
+    //                     clearInterval(interval);
+    //                     return 100;
+    //                 }
+    //                 return prevProgress + 1.67;
+    //             });
+    //         }, 1000);
+    //         return () => clearInterval(interval);
+    //     }
+    // }, [loading]);
 
     const fetchVideos = async () => {
         setLoading(true);
