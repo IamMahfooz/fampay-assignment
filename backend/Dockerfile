@@ -20,3 +20,4 @@ RUN go build -o myapp .
 
 # Set the entrypoint to the application binary
 CMD ["./myapp"]
+
