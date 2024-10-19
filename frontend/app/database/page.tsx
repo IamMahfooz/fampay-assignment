@@ -54,7 +54,7 @@ function Database() {
         setEmptyResponse(false); // Reset empty response state
 
         try {
-            const response = await fetch(`http://localhost:5004/database`, {
+            const response = await fetch(`https://fampay-assignment-production-66b8.up.railway.app/database`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
