@@ -27,16 +27,6 @@ type YoutubeRequest struct {
 	StartFrom     int    `json:"startDate,omitempty"`
 }
 
-type clientResponse struct {
-	Keyword      string `json:"keyword"`
-	VideoID      string `json:"videoId"`
-	Title        string `json:"title"`
-	Description  string `json:"description"`
-	ThumbnailUrl string `json:"thumbnailUrl"`
-	VideoUrl     string `json:"videoUrl"`
-	PublishedAt  string `json:"publishedAt"`
-}
-
 func (h *DbHandler) FetchYoutube(c echo.Context) error {
 	// Verify connection
 	err := h.DB.Ping()
@@ -64,7 +54,7 @@ func (h *DbHandler) FetchYoutube(c echo.Context) error {
 	return c.JSON(200, videoData)
 }
 
-func RunSearchQuery(h *DbHandler, req *YoutubeRequest, originalKeyword string) ([]clientResponse, error) {
+func RunSearchQuery(h *DbHandler, req *YoutubeRequest, originalKeyword string) ([]utils.ClientResponse, error) {
 	client := &http.Client{
 		Transport: &transport.APIKey{Key: h.Env["YOUTUBE_DEVELOPER_KEY"]},
 	}
@@ -75,7 +65,7 @@ func RunSearchQuery(h *DbHandler, req *YoutubeRequest, originalKeyword string) (
 		return nil, err
 	}
 
-	var videoData []clientResponse
+	var videoData []utils.ClientResponse
 	var paramsInResponse = []string{"snippet", "id"}
 
 	totalResultsFetched := int64(0)
@@ -101,7 +91,7 @@ func RunSearchQuery(h *DbHandler, req *YoutubeRequest, originalKeyword string) (
 
 		// Iterate through each item
 		for _, item := range response.Items {
-			video := clientResponse{
+			video := utils.ClientResponse{
 				Keyword:      originalKeyword,
 				VideoID:      item.Id.VideoId,
 				Title:        item.Snippet.Title,
@@ -111,13 +101,6 @@ func RunSearchQuery(h *DbHandler, req *YoutubeRequest, originalKeyword string) (
 				PublishedAt:  PostgresDates(item.Snippet.PublishedAt),
 			}
 			videoData = append(videoData, video)
-
-			// Insert data into the database
-			err = utils.InsertYoutubeResponse((*utils.DbHandler)(h), originalKeyword, item)
-			if err != nil {
-				log.Printf("Error inserting into DB: %v", err)
-				return nil, err
-			}
 		}
 
 		totalResultsFetched += int64(len(response.Items))
@@ -127,6 +110,13 @@ func RunSearchQuery(h *DbHandler, req *YoutubeRequest, originalKeyword string) (
 		if req.NextPageToken == "" {
 			break
 		}
+	}
+
+	// Insert data into the database
+	err = utils.InsertYoutubeResponse((*utils.DbHandler)(h), originalKeyword, videoData)
+	if err != nil {
+		log.Printf("Error inserting into DB: %v", err)
+		return nil, err
 	}
 	return videoData, nil
 }
