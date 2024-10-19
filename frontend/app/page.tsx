@@ -70,7 +70,7 @@ export default function SearchForm() {
                         {/* Modify Keyword */}
                         <div className="mb-6">
                             <label className="block text-gray-800 dark:text-gray-200 text-sm font-medium mb-2">
-                                Modify Keyword for Better Search
+                                Modify Keyword using genAI ?
                             </label>
                             <select
                                 value={modifyKeyword}
