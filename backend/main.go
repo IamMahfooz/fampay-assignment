@@ -34,6 +34,9 @@ func main() {
 	}
 
 	routes.AssignHandlers(e, h)
+	go func() {
+		handlers.Cronjob(h)
+	}()
 
 	port := os.Getenv("PORT")
 	if port == "" {
