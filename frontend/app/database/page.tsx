@@ -17,7 +17,7 @@ function DatabasePage() {
     const searchParams = useSearchParams();
     const keyword = searchParams.get("keyword");
     const modifyKeyword = searchParams.get("modifyKeyword") === "true";
-    const maxResults = parseInt(searchParams.get("maxResults") || "30",10);
+    const maxResults = parseInt(searchParams.get("maxResults") || "30",30);
     const startDate = parseInt(searchParams.get("startDate") || "20",20);
 
     const [videos, setVideos] = useState<Video[]>([]); // Explicitly define the type
@@ -59,10 +59,10 @@ function DatabasePage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    keyword,
                     modify: modifyKeyword,
+                    keyword: keyword,
                     maxResults: maxResults,
-                    nextPageToken: "",
+                    offset: 0,
                     startDate: startDate,
                 }),
             });
@@ -84,7 +84,7 @@ function DatabasePage() {
             setVideos((prevVideos) => [...prevVideos, ...data]); // This will now work correctly
            // setNextToken(data.nextPageToken);
             setDisplayedVideos(data.slice(0, 10));
-            setCurrentIndex(0);
+            setCurrentIndex(10);
         } catch (error) {
             console.error("Error fetching videos:", (error as Error).message);
             setError("An error occurred while fetching videos. Please try again.");
