@@ -134,8 +134,11 @@ func startDate(x int) string {
 }
 func roundRobin(h *DbHandler) {
 	if h.CurrentKey != 5 {
+		h.CurrentKey += 1
 		h.Env["YOUTUBE_DEVELOPER_KEY"] = os.Getenv(fmt.Sprintf("YOUTUBE_DEVELOPER_KEY_%d", h.CurrentKey))
 	} else {
+		h.CurrentKey = 1
 		h.Env["YOUTUBE_DEVELOPER_KEY"] = os.Getenv(fmt.Sprintf("YOUTUBE_DEVELOPER_KEY_%d", 1))
 	}
+	fmt.Println("Switched to api key number : ", h.CurrentKey)
 }
