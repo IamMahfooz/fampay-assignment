@@ -34,6 +34,7 @@ func main() {
 	}
 
 	routes.AssignHandlers(e, h)
+
 	go func() {
 		handlers.Cronjob(h)
 	}()
