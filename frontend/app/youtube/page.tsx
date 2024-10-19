@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, use } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
@@ -13,24 +13,30 @@ interface Video {
     publishedAt: string;
 }
 
-function YouTubePage() {
+function Database() {
     const searchParams = useSearchParams();
     const keyword = searchParams.get("keyword");
     const modifyKeyword = searchParams.get("modifyKeyword") === "true";
-    const maxResults = parseInt(searchParams.get("maxResults") || "10");
-    const startDate = parseInt(searchParams.get("startDate") || "20");
+    const maxResults = parseInt(searchParams.get("maxResults") || "10", 10);
+    const startDate = parseInt(searchParams.get("maxResults") || "10", 10)
 
     const [videos, setVideos] = useState<Video[]>([]); // Explicitly define the type
     const [displayedVideos, setDisplayedVideos] = useState<Video[]>([]); // Explicitly define the type
-    const [nextToken, setNextToken] = useState("");
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null); // Track errors
     const [emptyResponse, setEmptyResponse] = useState(false); // Track empty responses
+    const isInitialRender = useRef(true);
+    const [token,setToken]=useState("");
 
     useEffect(() => {
-        fetchVideos(nextToken);
+        // Prevent calling fetchVideos on the first render
+        if (isInitialRender.current) {
+            isInitialRender.current = false;
+            return;
+        }
+        fetchVideos();
     }, [keyword, modifyKeyword, maxResults]);
 
     useEffect(() => {
@@ -48,7 +54,7 @@ function YouTubePage() {
         }
     }, [loading]);
 
-    const fetchVideos = async (newToken: string ) => {
+    const fetchVideos = async () => {
         setLoading(true);
         setProgress(0);
         setError(null); // Reset error
@@ -62,8 +68,8 @@ function YouTubePage() {
                     keyword,
                     modify: modifyKeyword,
                     maxResults: maxResults,
-                    nextPageToken: "",
-                    startDate: startDate,
+                    nextPageToken: token,
+                    startFrom: startDate,
                 }),
             });
 
@@ -81,10 +87,9 @@ function YouTubePage() {
                 return;
             }
 
-            setVideos((prevVideos) => [...prevVideos, ...data]); // This will now work correctly
-           // setNextToken(data.nextPageToken);
-            setDisplayedVideos(data.slice(0, 10));
-            setCurrentIndex(0);
+            setVideos(data); // Set all fetched videos
+            setDisplayedVideos(data.slice(0, 10)); // Display first 10 videos initially
+            setCurrentIndex(10); // Set index for next page
         } catch (error) {
             console.error("Error fetching videos:", (error as Error).message);
             setError("An error occurred while fetching videos. Please try again.");
@@ -94,12 +99,12 @@ function YouTubePage() {
     };
 
     const handleNext = () => {
-        const newIndex = currentIndex + 10;
-        if (newIndex < videos.length) {
+        const newIndex = currentIndex + 10; // Move to the next set of 10 videos
+        if (newIndex <= videos.length) {
             setCurrentIndex(newIndex);
-            setDisplayedVideos(videos.slice(newIndex, newIndex + 10));
-        } else if (nextToken) {
-            fetchVideos(nextToken);
+            setDisplayedVideos(videos.slice(currentIndex, newIndex)); // Display next 10 videos
+        } else {
+            console.log("No more videos to show.");
         }
     };
 
@@ -107,7 +112,7 @@ function YouTubePage() {
         const newIndex = currentIndex - 10;
         if (newIndex >= 0) {
             setCurrentIndex(newIndex);
-            setDisplayedVideos(videos.slice(newIndex, newIndex + 10));
+            setDisplayedVideos(videos.slice(newIndex - 10, newIndex)); // Display previous 10 videos
         }
     };
 
@@ -158,14 +163,14 @@ function YouTubePage() {
                         <button
                             onClick={handlePrevious}
                             className="px-4 py-2 bg-gray-300 text-black rounded-md"
-                            disabled={currentIndex === 0}
+                            disabled={currentIndex === 10}
                         >
                             Previous
                         </button>
                         <button
                             onClick={handleNext}
                             className="px-4 py-2 bg-red-600 text-white rounded-md"
-                            disabled={currentIndex + maxResults >= videos.length && !nextToken}
+                            disabled={currentIndex >= videos.length}
                         >
                             Next
                         </button>
@@ -179,8 +184,7 @@ function YouTubePage() {
 export default function SubmissionForm() {
     return (
         <Suspense fallback={<>Loading...</>}>
-            <YouTubePage />
+            <Database />
         </Suspense>
     );
 }
-
