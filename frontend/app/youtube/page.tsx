@@ -1,6 +1,7 @@
-"use client";
-import React, { useState, useEffect, useRef, Suspense } from "react";
+"use client"
+import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 // Define the video object type
 interface Video {
@@ -12,62 +13,57 @@ interface Video {
     publishedAt: string;
 }
 
-function Youtube() {
+function YouTubePage() {
     const searchParams = useSearchParams();
-    const keyword = searchParams.get("keyword") || "";
+    const keyword = searchParams.get("keyword");
     const modifyKeyword = searchParams.get("modifyKeyword") === "true";
-    const maxResults = parseInt(searchParams.get("maxResults") || "10", 10);
-    const startDate = parseInt(searchParams.get("startDate") || "0", 10); // Corrected to use startDate
+    const maxResults = parseInt(searchParams.get("maxResults") || "30",10);
+    const startDate = parseInt(searchParams.get("startDate") || "20",20);
 
-    const [videos, setVideos] = useState<Video[]>([]);
-    const [displayedVideos, setDisplayedVideos] = useState<Video[]>([]);
+    const [videos, setVideos] = useState<Video[]>([]); // Explicitly define the type
+    const [displayedVideos, setDisplayedVideos] = useState<Video[]>([]); // Explicitly define the type
+    const [nextToken, setNextToken] = useState("");
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [error, setError] = useState<string | null>(null);
-    const [emptyResponse, setEmptyResponse] = useState(false);
-    const isInitialRender = useRef(true);
-    const [token, setToken] = useState("");
+    const [error, setError] = useState<string | null>(null); // Track errors
+    const [emptyResponse, setEmptyResponse] = useState(false); // Track empty responses
 
     useEffect(() => {
-        if (isInitialRender.current) {
-            isInitialRender.current = false;
-            return;
+        fetchVideos(nextToken);
+    }, [keyword, modifyKeyword, maxResults]);
+
+    useEffect(() => {
+        if (loading) {
+            const interval = setInterval(() => {
+                setProgress((prevProgress) => {
+                    if (prevProgress >= 100) {
+                        clearInterval(interval);
+                        return 100;
+                    }
+                    return prevProgress + 1.67;
+                });
+            }, 1000);
+            return () => clearInterval(interval);
         }
-        fetchVideos();
-    }, [keyword, modifyKeyword, maxResults, startDate]); // Added startDate as a dependency
+    }, [loading]);
 
-    // useEffect(() => {
-    //     if (loading) {
-    //         const interval = setInterval(() => {
-    //             setProgress((prevProgress) => {
-    //                 if (prevProgress >= 100) {
-    //                     clearInterval(interval);
-    //                     return 100;
-    //                 }
-    //                 return prevProgress + 1.67;
-    //             });
-    //         }, 1000);
-    //         return () => clearInterval(interval);
-    //     }
-    // }, [loading]);
-
-    const fetchVideos = async () => {
+    const fetchVideos = async (newToken: string ) => {
         setLoading(true);
         setProgress(0);
-        setError(null);
-        setEmptyResponse(false);
+        setError(null); // Reset error
+        setEmptyResponse(false); // Reset empty response state
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/youtube`, { // Use environment variable
+            const response = await fetch(`https://fampay-assignment-production-66b8.up.railway.app/youtube`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     keyword,
                     modify: modifyKeyword,
-                    maxResults,
-                    nextPageToken: token,
-                    startFrom: startDate,
+                    maxResults: maxResults,
+                    nextPageToken: "",
+                    startDate: startDate,
                 }),
             });
 
@@ -75,18 +71,20 @@ function Youtube() {
                 throw new Error(`Error fetching videos: ${response.statusText}`);
             }
 
-            const data: Video[] = await response.json();
+            const data: Video[] = await response.json(); // Make sure the response matches the `Video` type
 
             if (!data || data.length === 0) {
+                // If data is empty, show "no videos found" message
                 setEmptyResponse(true);
                 setVideos([]);
                 setDisplayedVideos([]);
                 return;
             }
 
-            setVideos(data);
+            setVideos((prevVideos) => [...prevVideos, ...data]); // This will now work correctly
+           // setNextToken(data.nextPageToken);
             setDisplayedVideos(data.slice(0, 10));
-            setCurrentIndex(10);
+            setCurrentIndex(0);
         } catch (error) {
             console.error("Error fetching videos:", (error as Error).message);
             setError("An error occurred while fetching videos. Please try again.");
@@ -97,11 +95,11 @@ function Youtube() {
 
     const handleNext = () => {
         const newIndex = currentIndex + 10;
-        if (newIndex <= videos.length) {
+        if (newIndex < videos.length) {
             setCurrentIndex(newIndex);
-            setDisplayedVideos(videos.slice(currentIndex, newIndex));
-        } else {
-            console.log("No more videos to show.");
+            setDisplayedVideos(videos.slice(newIndex, newIndex + 10));
+        } else if (nextToken) {
+            fetchVideos(nextToken);
         }
     };
 
@@ -109,7 +107,7 @@ function Youtube() {
         const newIndex = currentIndex - 10;
         if (newIndex >= 0) {
             setCurrentIndex(newIndex);
-            setDisplayedVideos(videos.slice(newIndex - 10, newIndex));
+            setDisplayedVideos(videos.slice(newIndex, newIndex + 10));
         }
     };
 
@@ -127,9 +125,9 @@ function Youtube() {
                     </div>
                 </div>
             ) : error ? (
-                <div className="text-red-600 text-center">{error}</div>
+                <div className="text-red-600 text-center">{error}</div> // Display error message
             ) : emptyResponse ? (
-                <div className="text-center text-gray-500">No videos found for your search.</div>
+                <div className="text-center text-gray-500">No videos found for your search.</div> // Display "no videos found"
             ) : (
                 <>
                     <table className="min-w-full table-auto">
@@ -160,14 +158,14 @@ function Youtube() {
                         <button
                             onClick={handlePrevious}
                             className="px-4 py-2 bg-gray-300 text-black rounded-md"
-                            disabled={currentIndex === 10}
+                            disabled={currentIndex === 0}
                         >
                             Previous
                         </button>
                         <button
                             onClick={handleNext}
                             className="px-4 py-2 bg-red-600 text-white rounded-md"
-                            disabled={currentIndex >= videos.length}
+                            disabled={currentIndex + maxResults >= videos.length && !nextToken}
                         >
                             Next
                         </button>
@@ -181,7 +179,7 @@ function Youtube() {
 export default function SubmissionForm() {
     return (
         <Suspense fallback={<>Loading...</>}>
-            <Youtube />
+            <YouTubePage />
         </Suspense>
     );
 }
