@@ -4,7 +4,7 @@ package utils
 import (
 	"database/sql"
 	"fmt"
-	"google.golang.org/api/youtube/v3"
+	"strings"
 	"time"
 )
 
@@ -25,24 +25,45 @@ type DbHandler struct {
 }
 
 // InsertYoutubeResponse Function to insert the YouTube response into the database
-func InsertYoutubeResponse(h *DbHandler, keyword string, item *youtube.SearchResult) error {
+func InsertYoutubeResponse(h *DbHandler, keyword string, items []ClientResponse) error {
 	query := `
 		INSERT INTO youtube_responses (keyword, video_id, title, description, thumbnail_url, video_url, published_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		VALUES `
+
+	// Parameters slice to hold the arguments for each item
+	var params []interface{}
+
+	// Dynamically build the query placeholders for bulk insertion
+	values := make([]string, 0, len(items))
+	for i, item := range items {
+		// Each item will have its own set of placeholders
+		placeholders := fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", i*7+1, i*7+2, i*7+3, i*7+4, i*7+5, i*7+6, i*7+7)
+		values = append(values, placeholders)
+
+		// Append parameters for each item
+		params = append(params,
+			item.Keyword,
+			item.VideoID,
+			item.Title,
+			item.Description,
+			item.ThumbnailUrl,
+			item.VideoUrl,
+			item.PublishedAt,
+		)
+	}
+
+	// Join all values and add the ON CONFLICT clause
+	query += strings.Join(values, ",") + `
 		ON CONFLICT (keyword, video_id) DO NOTHING;` // Avoid duplicates
 
-	_, err := h.DB.Exec(query,
-		keyword,
-		item.Id.VideoId,
-		item.Snippet.Title,
-		item.Snippet.Description,
-		item.Snippet.Thumbnails.Default.Url,
-		"https://www.youtube.com/watch?v="+item.Id.VideoId,
-		PostgresDates(item.Snippet.PublishedAt), // Formatting date for PostgreSQL
-	)
+	// Execute the query
+	_, err := h.DB.Exec(query, params...)
 	if err != nil {
 		fmt.Println("Error inserting into DB:", err)
+		return err
 	}
+
+	fmt.Println("Bulk insert succeeded!")
 	return err
 }
 
