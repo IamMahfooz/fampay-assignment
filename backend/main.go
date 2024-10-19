@@ -1,7 +1,10 @@
 package main
+
 import (
-	"github.com/IamMahfhooz/fampay-assignment/routes"
+	"database/sql"
 	"fmt"
+	"github.com/IamMahfhooz/fampay-assignment/handlers"
+	"github.com/IamMahfhooz/fampay-assignment/routes"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -17,9 +20,20 @@ func main() {
 	e.Use(middleware.CORS())
 
 	db := routes.StartDbProcess(envFile, e)
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			fmt.Println("error while closing db")
+		}
+	}(db)
 
-	routes.AssignHandlers(db, e, envFile)
+	h := &handlers.DbHandler{
+		Keywords: routes.UniqueKeywords(db),
+		DB:       db,
+		Env:      envFile,
+	}
+
+	routes.AssignHandlers(e, h)
 
 	port := os.Getenv("PORT")
 	if port == "" {
