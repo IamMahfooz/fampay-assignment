@@ -10,11 +10,13 @@ import (
 	"google.golang.org/api/youtube/v3"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
 type DbHandler struct {
-	Keywords []string
+	Mu       sync.Mutex
+	Keywords map[string]int
 	DB       *sql.DB
 	Env      map[string]string
 }
@@ -113,7 +115,7 @@ func RunSearchQuery(h *DbHandler, req *YoutubeRequest, originalKeyword string) (
 	}
 
 	// Insert data into the database
-	err = utils.InsertYoutubeResponse((*utils.DbHandler)(h), originalKeyword, videoData)
+	err = utils.InsertYoutubeResponse((*utils.DbHandler)(h), videoData)
 	if err != nil {
 		log.Printf("Error inserting into DB: %v", err)
 		return nil, err
