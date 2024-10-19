@@ -1,5 +1,6 @@
-// this file handlers read and write operations to the postgres-db
+// Package utils  : this file handlers read and write operations to the postgres-db
 package utils
+
 import (
 	"database/sql"
 	"fmt"
