@@ -1,7 +1,6 @@
-"use client"
-import React, { useState, useEffect, useRef } from "react";
+"use client";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 
 // Define the video object type
 interface Video {
@@ -15,29 +14,28 @@ interface Video {
 
 function Database() {
     const searchParams = useSearchParams();
-    const keyword = searchParams.get("keyword");
+    const keyword = searchParams.get("keyword") || "";
     const modifyKeyword = searchParams.get("modifyKeyword") === "true";
     const maxResults = parseInt(searchParams.get("maxResults") || "10", 10);
-    const startDate = parseInt(searchParams.get("maxResults") || "10", 10)
+    const startDate = parseInt(searchParams.get("startDate") || "0", 10); // Corrected to use startDate
 
-    const [videos, setVideos] = useState<Video[]>([]); // Explicitly define the type
-    const [displayedVideos, setDisplayedVideos] = useState<Video[]>([]); // Explicitly define the type
+    const [videos, setVideos] = useState<Video[]>([]);
+    const [displayedVideos, setDisplayedVideos] = useState<Video[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [error, setError] = useState<string | null>(null); // Track errors
-    const [emptyResponse, setEmptyResponse] = useState(false); // Track empty responses
+    const [error, setError] = useState<string | null>(null);
+    const [emptyResponse, setEmptyResponse] = useState(false);
     const isInitialRender = useRef(true);
-    const [token,setToken]=useState("");
+    const [token, setToken] = useState("");
 
     useEffect(() => {
-        // Prevent calling fetchVideos on the first render
         if (isInitialRender.current) {
             isInitialRender.current = false;
             return;
         }
         fetchVideos();
-    }, [keyword, modifyKeyword, maxResults]);
+    }, [keyword, modifyKeyword, maxResults, startDate]); // Added startDate as a dependency
 
     useEffect(() => {
         if (loading) {
@@ -57,17 +55,17 @@ function Database() {
     const fetchVideos = async () => {
         setLoading(true);
         setProgress(0);
-        setError(null); // Reset error
-        setEmptyResponse(false); // Reset empty response state
+        setError(null);
+        setEmptyResponse(false);
 
         try {
-            const response = await fetch(`https://fampay-assignment-production-66b8.up.railway.app/database`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/database`, { // Use environment variable
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     keyword,
                     modify: modifyKeyword,
-                    maxResults: maxResults,
+                    maxResults,
                     nextPageToken: token,
                     startFrom: startDate,
                 }),
@@ -77,19 +75,18 @@ function Database() {
                 throw new Error(`Error fetching videos: ${response.statusText}`);
             }
 
-            const data: Video[] = await response.json(); // Make sure the response matches the `Video` type
+            const data: Video[] = await response.json();
 
             if (!data || data.length === 0) {
-                // If data is empty, show "no videos found" message
                 setEmptyResponse(true);
                 setVideos([]);
                 setDisplayedVideos([]);
                 return;
             }
 
-            setVideos(data); // Set all fetched videos
-            setDisplayedVideos(data.slice(0, 10)); // Display first 10 videos initially
-            setCurrentIndex(10); // Set index for next page
+            setVideos(data);
+            setDisplayedVideos(data.slice(0, 10));
+            setCurrentIndex(10);
         } catch (error) {
             console.error("Error fetching videos:", (error as Error).message);
             setError("An error occurred while fetching videos. Please try again.");
@@ -99,10 +96,10 @@ function Database() {
     };
 
     const handleNext = () => {
-        const newIndex = currentIndex + 10; // Move to the next set of 10 videos
+        const newIndex = currentIndex + 10;
         if (newIndex <= videos.length) {
             setCurrentIndex(newIndex);
-            setDisplayedVideos(videos.slice(currentIndex, newIndex)); // Display next 10 videos
+            setDisplayedVideos(videos.slice(currentIndex, newIndex));
         } else {
             console.log("No more videos to show.");
         }
@@ -112,7 +109,7 @@ function Database() {
         const newIndex = currentIndex - 10;
         if (newIndex >= 0) {
             setCurrentIndex(newIndex);
-            setDisplayedVideos(videos.slice(newIndex - 10, newIndex)); // Display previous 10 videos
+            setDisplayedVideos(videos.slice(newIndex - 10, newIndex));
         }
     };
 
@@ -130,9 +127,9 @@ function Database() {
                     </div>
                 </div>
             ) : error ? (
-                <div className="text-red-600 text-center">{error}</div> // Display error message
+                <div className="text-red-600 text-center">{error}</div>
             ) : emptyResponse ? (
-                <div className="text-center text-gray-500">No videos found for your search.</div> // Display "no videos found"
+                <div className="text-center text-gray-500">No videos found for your search.</div>
             ) : (
                 <>
                     <table className="min-w-full table-auto">
