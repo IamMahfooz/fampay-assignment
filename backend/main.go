@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/IamMahfhooz/fampay-assignment/handlers"
 	"github.com/IamMahfhooz/fampay-assignment/routes"
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
@@ -13,8 +12,16 @@ import (
 )
 
 func main() {
-	envFile, _ := godotenv.Read("../.env")
-	fmt.Println("loaded env variables")
+	//envFile, _ := godotenv.Read("../.env")
+	//fmt.Println("loaded env variables")
+	envFile := make(map[string]string)
+	envFile["HOST"] = os.Getenv("HOST")
+	envFile["DBPORT"] = os.Getenv("DBPORT")
+	envFile["DBNAME"] = os.Getenv("DBNAME")
+	envFile["USER"] = os.Getenv("USER")
+	envFile["YOUTUBE_DEVELOPER_KEY"] = os.Getenv("YOUTUBE_DEVELOPER_KEY")
+	envFile["GEMINI_API_KEY"] = os.Getenv("GEMINI_API_KEY")
+	envFile["PASSWORD"] = os.Getenv("PASSWORD")
 
 	e := echo.New()
 	e.Use(middleware.CORS())
