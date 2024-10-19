@@ -49,7 +49,7 @@ func StartDbProcess(envFile map[string]string, e *echo.Echo) *sql.DB {
 	return db
 
 }
-func UniqueKeywords(db *sql.DB) []string {
+func UniqueKeywords(db *sql.DB) map[string]int {
 	// Query to get all unique keywords
 	query := `SELECT DISTINCT keyword FROM youtube_responses`
 
@@ -61,7 +61,7 @@ func UniqueKeywords(db *sql.DB) []string {
 	defer rows.Close()
 
 	// Slice to hold the keywords
-	var keywords []string
+	var keywords map[string]int
 
 	// Iterate through the rows
 	for rows.Next() {
@@ -70,7 +70,7 @@ func UniqueKeywords(db *sql.DB) []string {
 		if err != nil {
 			log.Fatal("Error scanning row:", err)
 		}
-		keywords = append(keywords, keyword)
+		keywords[keyword] = 1
 	}
 
 	// Check for errors from iterating over rows
