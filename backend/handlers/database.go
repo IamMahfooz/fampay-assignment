@@ -39,7 +39,7 @@ func (h *DbHandler) FetchDatabase(c echo.Context) error {
 		fmt.Println("Unable to fetch response from database:", err.Error())
 		return c.JSON(500, map[string]string{"error": "Failed to fetch records from database"})
 	}
-	fmt.Println(videos)
+	//fmt.Println(videos)
 
 	return c.JSON(200, videos)
 }
