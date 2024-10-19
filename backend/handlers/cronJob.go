@@ -10,6 +10,7 @@ import (
 func Cronjob(h *DbHandler) {
 	for {
 		fmt.Println("-------------Running Cronjob-------------------------")
+		time.Sleep(30 * time.Minute)
 		for key, _ := range h.Keywords {
 			req := &YoutubeRequest{
 				Modify:        true,
@@ -23,7 +24,7 @@ func Cronjob(h *DbHandler) {
 				fmt.Println("unable to perform cronjob")
 			}
 		}
-		time.Sleep(30 * time.Minute)
+		//time.Sleep(30 * time.Minute)
 	}
 
 }
