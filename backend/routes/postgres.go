@@ -58,10 +58,15 @@ func UniqueKeywords(db *sql.DB) map[string]int {
 	if err != nil {
 		log.Fatal("Error executing query:", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			fmt.Println("unable to close rows:", err)
+		}
+	}(rows)
 
 	// Slice to hold the keywords
-	var keywords map[string]int
+	keywords := make(map[string]int)
 
 	// Iterate through the rows
 	for rows.Next() {
@@ -80,7 +85,7 @@ func UniqueKeywords(db *sql.DB) map[string]int {
 
 	// Print the unique keywords
 	fmt.Println("Unique Keywords:")
-	for _, k := range keywords {
+	for k, _ := range keywords {
 		fmt.Println(k)
 	}
 	return keywords

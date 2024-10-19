@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 )
 
 // ClientResponse Struct to format the response sent back to the client
@@ -102,16 +101,4 @@ func GetYoutubeResponsesByKeyword(h *DbHandler, keyword string, limit, offset in
 	}
 
 	return responses, nil
-}
-
-// PostgresDates Utility function to convert YouTube date to PostgreSQL date format
-func PostgresDates(str string) string {
-	layout := time.RFC3339
-	t, err := time.Parse(layout, str)
-	if err != nil {
-		fmt.Println("Error parsing date:", err)
-		return str
-	}
-	// Format to PostgreSQL compatible timestamp format (YYYY-MM-DD HH:MM:SS)
-	return t.Format("2006-01-02 15:04:05")
 }

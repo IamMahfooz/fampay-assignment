@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/IamMahfhooz/fampay-assignment/utils"
 	"github.com/labstack/echo/v4"
+	"strings"
 )
 
 type databaseRequest struct {
@@ -23,20 +24,22 @@ func (h *DbHandler) FetchDatabase(c echo.Context) error {
 	}
 
 	// Optionally modify the keyword if Modify is set to true
-	if req.Modify {
-		req.Keyword, err = utils.PrettyPrompt(req.Keyword, h.Env["GEMINI_API_KEY"])
-		if err != nil {
-			fmt.Println("Unable to modify keyword, continuing with the original:", err.Error())
-		}
-	}
 
-	// Fetch data from the database based on the keyword, limit (MaxResults), and offset
+	req.Keyword, err = utils.ReverseSearchDB((*utils.DbHandler)(h), req.Keyword, h.Env["GEMINI_API_KEY"])
+	if err != nil || req.Keyword == "NO" {
+		fmt.Println("No match found :", err.Error())
+		return c.JSON(500, map[string]string{"error": "No videos with the given keyword in the database . Search again with YouTube option."})
+	}
+	req.Keyword = strings.TrimSpace(req.Keyword)
+	fmt.Println("keyword was : -->", req.Keyword)
+
+	//Fetch data from the database based on the keyword, limit (MaxResults), and offset
 	videos, err := utils.GetYoutubeResponsesByKeyword((*utils.DbHandler)(h), req.Keyword, req.MaxResults, 0)
 	if err != nil {
 		fmt.Println("Unable to fetch response from database:", err.Error())
 		return c.JSON(500, map[string]string{"error": "Failed to fetch records from database"})
 	}
-	//fmt.Println(videos)
+	fmt.Println(videos)
 
 	return c.JSON(200, videos)
 }
