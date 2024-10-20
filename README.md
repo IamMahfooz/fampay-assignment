@@ -34,6 +34,22 @@ To make an API to fetch latest videos sorted in reverse chronological order of t
 - ✅ **Minimal Frontend** : Used next.js to create a minimal frontend for client server interaction (most part reused from previous projects).
 - ✅ **Scalable** : Used genAI tools to match queries to past keyword from the database which leads to better utilisation of past result and optimises search times.
 ----
+## DB Schema:
+```
+CREATE TABLE IF NOT EXISTS youtube_responses (
+	    id SERIAL PRIMARY KEY,
+	    keyword TEXT NOT NULL,
+	    video_id TEXT NOT NULL,
+	    title TEXT NOT NULL,
+	    description TEXT NOT NULL,
+	    thumbnail_url TEXT,
+	    video_url TEXT,
+	    published_at TIMESTAMP,
+	    UNIQUE (keyword, video_id)
+	);
+	CREATE INDEX IF NOT EXISTS idx_keyword ON youtube_responses(keyword);
+```
+
 ## Tech Stack :
 - **Backend** : Golang
 - **Database** : Postgres
