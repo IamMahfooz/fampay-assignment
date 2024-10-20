@@ -2,8 +2,9 @@
 To make an API to fetch latest videos sorted in reverse chronological order of their publishing date-time from YouTube for a given tag/search query in a paginated response.
 
 ---
-**Live Link** : https://fampay-assignment-alpha.vercel.app/  
--- Restrictions in functionality due to caching issues in free tier .  
+**Live Link** : https://fampay-assignment-alpha.vercel.app/   
+-- Local pagination doesn't work on hosted site, but works on local deployment.  
+-- Restrictions in functionality due to caching issues in free tier service.  
 -- It works completely fine if you **host the frontend locally** and leave everything hosted in the cloud.
 
 **Server Link** : https://fampay-assignment-production-66b8.up.railway.app  
@@ -34,6 +35,7 @@ To make an API to fetch latest videos sorted in reverse chronological order of t
 - ✅ **Minimal Frontend** : Used next.js to create a minimal frontend for client server interaction (most part reused from previous projects).
 - ✅ **Scalable** : Used genAI tools to match queries to past keyword from the database which leads to better utilisation of past result and optimises search times.
 ----
+
 ## DB Schema:
 ```
 CREATE TABLE IF NOT EXISTS youtube_responses (
@@ -51,7 +53,7 @@ CREATE TABLE IF NOT EXISTS youtube_responses (
 ```
 
 ## Tech Stack :
-- **Backend** : Golang
+- **Backend** : Golang , API
 - **Database** : Postgres
 - **Frontend** : Next.js , shadcn/ui
 
