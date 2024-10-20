@@ -13,11 +13,11 @@ interface Video {
     publishedAt: string;
 }
 
-function DatabasePage() {
+function YouTubePage() {
     const searchParams = useSearchParams();
     const keyword = searchParams.get("keyword");
     const modifyKeyword = searchParams.get("modifyKeyword") === "true";
-    const maxResults = parseInt(searchParams.get("maxResults") || "30",30);
+    const maxResults = parseInt(searchParams.get("maxResults") || "30",10);
     const startDate = parseInt(searchParams.get("startDate") || "20",20);
 
     const [videos, setVideos] = useState<Video[]>([]); // Explicitly define the type
@@ -55,14 +55,14 @@ function DatabasePage() {
         setEmptyResponse(false); // Reset empty response state
 
         try {
-            const response = await fetch(`https://fampay-assignment-production-66b8.up.railway.app/database`, {
+            const response = await fetch(`https://fampay-assignment-production-66b8.up.railway.app`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    keyword,
                     modify: modifyKeyword,
-                    keyword: keyword,
                     maxResults: maxResults,
-                    offset: 0,
+                    nextPageToken: "",
                     startDate: startDate,
                 }),
             });
@@ -84,7 +84,7 @@ function DatabasePage() {
             setVideos((prevVideos) => [...prevVideos, ...data]); // This will now work correctly
            // setNextToken(data.nextPageToken);
             setDisplayedVideos(data.slice(0, 10));
-            setCurrentIndex(10);
+            setCurrentIndex(0);
         } catch (error) {
             console.error("Error fetching videos:", (error as Error).message);
             setError("An error occurred while fetching videos. Please try again.");
@@ -179,7 +179,7 @@ function DatabasePage() {
 export default function SubmissionForm() {
     return (
         <Suspense fallback={<>Loading...</>}>
-            <DatabasePage />
+            <YouTubePage />
         </Suspense>
     );
 }

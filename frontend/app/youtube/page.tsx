@@ -55,7 +55,7 @@ function YouTubePage() {
         setEmptyResponse(false); // Reset empty response state
 
         try {
-            const response = await fetch(`https://fampay-assignment-production-66b8.up.railway.app/youtube`, {
+            const response = await fetch(`https://fampay-assignment-production-66b8.up.railway.app`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
