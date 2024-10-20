@@ -9,15 +9,15 @@ import (
 )
 
 type databaseRequest struct {
-	Modify     bool   `json:"modify,omitempty"`
+	Modify     bool   `json:"modify"`
 	Keyword    string `json:"keyword"`
-	MaxResults int64  `json:"maxResults"`       // Allow flexibility for max results
-	Offset     int64  `json:"offset,omitempty"` // For pagination offset
-	StartFrom  string `json:"startDate,omitempty"`
+	MaxResults int64  `json:"maxResults"` // Allow flexibility for max results
+	Offset     int64  `json:"offset"`     // For pagination offset
+	StartFrom  string `json:"startDate"`
 }
 
 func (h *DbHandler) FetchDatabase(c echo.Context) error {
-	req := new(databaseRequest)
+	req := new(YoutubeRequest)
 	err := c.Bind(req)
 	if err != nil {
 		return c.JSON(400, map[string]string{"error": "Invalid request body"})
