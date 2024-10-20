@@ -39,17 +39,19 @@ curl -X POST https://fampay-assignment-production-66b8.up.railway.app/database \
 
 ## WebApp Functionality
 
-### Query from YouTube:
-1. **API Key Allocation**: Uses a round-robin approach to assign a new API key to each request.
-2. **Keyword Generation**: Utilizes `Gemini API` to find relevant keywords for better results.
-3. **YouTube Query**: Sends the request to YouTube API and retrieves results.
-4. **Results Storage**: Saves results to the database and sends them to the user.
-5. **Cronjob**: Adds the query to a cronjob for continuous fetching of new results in the background.
+### 1. Querying from YouTube:
+   - **Step 1**: The user enters a search query and selects YouTube as the data source on the homepage.
+   - **Step 2**: The system assigns an API key to the request using a round-robin approach to ensure balanced usage of available keys.
+   - **Step 3**: Optionally, the system utilizes the `Gemini API` to generate optimized keywords related to the user's query for better search results.
+   - **Step 4**: The request is sent to the YouTube API with the generated keyword(s), and the response containing videos is fetched.
+   - **Step 5**: The results are sent back to the user and simultaneously stored in the PostgreSQL database for future reference.
+   - **Step 6**: The search query is added to a cron job, which continues to fetch updated results periodically in the background to capture any new videos that match the query.
 
-### Query from Database:
-1. **Keyword Matching**: Uses `Gemini API` to find the best matching keyword from the database for the query.
-2. **Fetch Data**: Retrieves past data instead of querying YouTube.
-3. **Response**: If a matching keyword is found, it sends the data back to the user.
+### 2. Querying from the Database:
+   - **Step 1**: The user enters a search query and selects the Database as the data source on the homepage.
+   - **Step 2**: The system uses the `Gemini API` to find the best matching keyword from past queries stored in the database.
+   - **Step 3**: If a relevant keyword match is found, the system retrieves the previously stored video data associated with that keyword from the database.
+   - **Step 4**: The results are returned to the user without making any fresh YouTube API calls, optimizing performance and response times.
 
 ---
 
